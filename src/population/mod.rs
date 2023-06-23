@@ -102,7 +102,8 @@ use crate::{
     random::{get_rng, random_seed, Prng, Rng, Seed},
 };
 use rand::distributions::uniform::SampleUniform;
-#[cfg(not(target_arch = "wasm32"))]
+//#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "data-parallelism")]
 use rayon;
 use std::{fmt::Debug, marker::PhantomData};
 
@@ -149,7 +150,7 @@ where
 #[derive(Clone, Debug, PartialEq)]
 pub struct PopulationBuilder;
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "data-parallelism")]
 impl PopulationBuilder {
     fn build_population<B, G>(genome_builder: &B, size: usize, mut rng: Prng) -> Population<G>
     where
@@ -181,7 +182,7 @@ impl PopulationBuilder {
     }
 }
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(not(feature = "data-parallelism"))]
 impl PopulationBuilder {
     fn build_population<B, G>(genome_builder: &B, size: usize, mut rng: Prng) -> Population<G>
     where
@@ -364,6 +365,48 @@ where
     {
         (0..self.genome_length)
             .map(|_| rng.gen_range(self.min_value.clone()..self.max_value.clone()))
+            .collect()
+    }
+}
+
+/// A `GenomeBuilder` that builds value encoded `genetic::Genotype`s.
+///
+/// The default implementation can build `Vec<T>` genomes. The values of
+/// `T` are generated randomly in the range between a min value and a max
+/// value.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ValuesEncodedGenomeBuilder<V> {
+    genome_length: usize,
+    min_values: Vec<V>,
+    max_values: Vec<V>,
+}
+
+impl<V> ValuesEncodedGenomeBuilder<V> {
+    /// Returns a new instance of the `ValueEncodedGenomeBuilder` that builds
+    /// value encoded genomes of length specified by the given `genome_length`.
+    ///
+    /// The values of the generated genomes are in the range between the given
+    /// `min_value` (inclusive) and `max_value` (exclusive).
+    pub fn new(genome_length: usize, min_values: Vec<V>, max_values: Vec<V>) -> Self {
+        assert!(min_values.len() == max_values.len() && min_values.len() == genome_length);
+        ValuesEncodedGenomeBuilder {
+            genome_length,
+            min_values,
+            max_values,
+        }
+    }
+}
+
+impl<V> GenomeBuilder<Vec<V>> for ValuesEncodedGenomeBuilder<V>
+where
+    V: Clone + Debug + PartialEq + PartialOrd + SampleUniform + Send + Sync,
+{
+    fn build_genome<R>(&self, _: usize, rng: &mut R) -> Vec<V>
+    where
+        R: Rng + Sized,
+    {
+        self.min_values.iter().zip(self.max_values.iter())
+            .map(|(min, max)| rng.gen_range(min.clone()..max.clone()))
             .collect()
     }
 }

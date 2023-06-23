@@ -35,7 +35,8 @@ use crate::{
     statistic::{timed, ProcessingTime, TimedResult, TrackProcessingTime},
 };
 use chrono::Local;
-#[cfg(not(target_arch = "wasm32"))]
+//#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "data-parallelism")]
 use rayon;
 use std::{
     fmt::{self, Display},
@@ -257,7 +258,8 @@ where
 
 /// Calculates the `genetic::Fitness` value of each `genetic::Genotype` and
 /// records the highest and lowest values.
-#[cfg(not(target_arch = "wasm32"))]
+//#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "data-parallelism")]
 fn par_evaluate_fitness<G, F, E>(population: &[G], evaluator: &E) -> TimedResult<(Vec<F>, F, F)>
 where
     G: Genotype + Sync,
@@ -309,7 +311,8 @@ where
     }
 }
 
-#[cfg(target_arch = "wasm32")]
+//#[cfg(target_arch = "wasm32")]
+#[cfg(not(feature = "data-parallelism"))]
 fn par_evaluate_fitness<G, F, E>(population: &[G], evaluator: &E) -> TimedResult<(Vec<F>, F, F)>
 where
     G: Genotype + Sync,
@@ -364,7 +367,8 @@ where
 
 /// Lets the parents breed their offspring and mutate its children. And
 /// finally combines the offspring of all parents into one big offspring.
-#[cfg(not(target_arch = "wasm32"))]
+//#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "data-parallelism")]
 fn par_breed_offspring<G, C, M>(
     parents: Vec<Parents<G>>,
     breeder: &C,
@@ -412,7 +416,7 @@ where
     }
 }
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(not(feature = "data-parallelism"))]
 fn par_breed_offspring<G, C, M>(
     parents: Vec<Parents<G>>,
     breeder: &C,

@@ -5,7 +5,7 @@ extern crate galvanic_assert;
 use galvanic_assert::matchers::*;
 
 use genevo::{
-    population::{BinaryEncodedGenomeBuilder, ValueEncodedGenomeBuilder},
+    population::{BinaryEncodedGenomeBuilder, ValueEncodedGenomeBuilder, ValuesEncodedGenomeBuilder},
     prelude::*,
     random::Rng,
 };
@@ -25,6 +25,17 @@ fn create_population_of_vec_of_bool_uniform_at_random() {
 fn create_population_of_vec_of_f64_uniform_at_random() {
     let population: Population<Vec<f64>> = build_population()
         .with_genome_builder(ValueEncodedGenomeBuilder::new(4, -2., 2.))
+        .of_size(200)
+        .uniform_at_random();
+
+    println!("{:?}", population);
+    assert_that!(&population.size(), eq(200));
+}
+
+#[test]
+fn create_population_of_vec_of_f64_uniform_at_random2() {
+    let population: Population<Vec<f64>> = build_population()
+        .with_genome_builder(ValuesEncodedGenomeBuilder::new(4, vec![-2., -2., -2., -2.], vec![2., 2., 2., 2.]))
         .of_size(200)
         .uniform_at_random();
 
